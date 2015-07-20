@@ -1,0 +1,7 @@
+name = Social Media Panes
+description = Provides user an option to easily fetch feeds from Facebook and Twitter and then display them using pane.
+core = 7.x
+package = Social
+
+dependencies[] = socialfeed
+dependencies[] = timeago

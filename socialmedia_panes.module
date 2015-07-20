@@ -1,0 +1,245 @@
+<?php
+
+/**
+ * @file
+ * Provides custom panel pane for social feeds.
+ */
+
+use Facebook\FacebookSession;
+use Facebook\FacebookRequest;
+use MetzWeb\Instagram\Instagram;
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function socialmedia_panes_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function socialmedia_panes_theme($existing, $type, $theme, $path) {
+  return array(
+    'socialmedia_panes_facebook' => array(
+      'variables' => array('facebook' => NULL),
+      'template' => 'socialmedia_panes_facebook',
+      'path' => drupal_get_path('module', 'socialmedia_panes') . '/templates',
+    ),
+    'socialmedia_panes_twitter' => array(
+      'variables' => array('twitter' => NULL),
+      'template' => 'socialmedia_panes_twitter',
+      'path' => drupal_get_path('module', 'socialmedia_panes') . '/templates',
+    ),
+    'socialmedia_panes_instagram' => array(
+      'variables' => array('instagram_images' => NULL),
+      'template' => 'socialmedia_panes_instagram',
+      'path' => drupal_get_path('module', 'socialmedia_panes') . '/templates',
+    ),
+    'socialmedia_panes' => array(
+      'variables' => array('social_feeds' => array()),
+      'template' => 'socialmedia_panes',
+      'path' => drupal_get_path('module', 'socialmedia_panes') . '/templates',
+    ),
+  );
+}
+
+
+/**
+ * Returns HTML with feeds in required format.
+ *
+ * @param string $page_name
+ *   Array with parameters for this action: depends on the trigger.
+ */
+function socialmedia_panes_facebook_feeds($page_name = '') {
+  $config = $message_feed = array();
+  $display_time = $display_pic = $selected_type = $selected_type_key = $fb_type = $selected_type_value = '';
+  $config['app_id'] = variable_get('socialfeed_facebook_app_id');
+  $config['secret'] = variable_get('socialfeed_facebook_secret_key');
+  $fb_page = $page_name;
+
+  // PHP SDK 4.x
+  libraries_load('facebook');
+  FacebookSession::setDefaultApplication($config['app_id'], $config['secret']);
+  if (isset($config['app_id']) && !empty($config['app_id']) && isset($config['secret']) && !empty($config['secret'])) {
+    $session = FacebookSession::newAppSession();
+    $request = new FacebookRequest($session, 'GET', '/' . $fb_page . '/feed');
+    $response = $request->execute();
+    $graph_object = $response->getGraphObject();
+    $facebook_values = $graph_object->asArray('data');
+    if ($facebook_values) {
+      $display_time = variable_get('socialfeed_facebook_time_stamp');
+      $display_pic = variable_get('socialfeed_facebook_display_pic');
+      $display_all_posts = variable_get('socialfeed_facebook_all_types');
+
+      $selected_type = variable_get('socialfeed_facebook_post_type');
+      $selected_type_key = $selected_type;
+      $fb_type = array('link', 'status', 'photo', 'video');
+      $selected_type_value = $fb_type[$selected_type_key];
+      $i = 0;
+      foreach ($facebook_values['data'] as $facebook_value) {
+        if ($facebook_value->type == $selected_type_value) {
+          if (array_key_exists('message', $facebook_value)) {
+            if ($facebook_value->type == 'photo') {
+              if ($display_pic == 1) {
+                $message_feed[$i]['picture'] = $facebook_value->picture;
+              }
+            }
+            $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
+            if ($display_time == 1) {
+              $formatted_date = new DateTime($facebook_value->created_time);
+              $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
+            }
+          }
+          $i++;
+          if ($i == variable_get('socialfeed_facebook_no_feeds')) {
+            break;
+          }
+        }
+        elseif ($display_all_posts == 1) {
+          if (array_key_exists('message', $facebook_value)) {
+            if ($display_pic == 1) {
+              $message_feed[$i]['picture'] = $facebook_value->picture;
+            }
+            $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
+            $message_feed[$i]['type'] = $facebook_value->type;
+            if ($display_time == 1) {
+              $formatted_date = new DateTime($facebook_value->created_time);
+              $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
+            }
+          }
+          if (isset($message_feed[$i])) {
+            $id = $facebook_value->id;
+            $temp = explode('_', $id);
+            if (isset($temp[1])) {
+              $message_feed[$i]['link'] = 'https://www.facebook.com/' . $page_name . '/posts/' . $temp[1];
+            }
+            else {
+              $message_feed[$i]['link'] = '#';
+            }
+            $detail = socialmedia_panes_fb_get_detail($id, $session);
+            $message_feed[$i]['category'] = $detail['from']->category;
+            $message_feed[$i]['comments'] = socialmedia_panes_fb_get_count('comments', $id, $session);
+            $message_feed[$i]['likes'] = socialmedia_panes_fb_get_count('likes', $id, $session);
+            $message_feed[$i]['timeago'] = timeago_format_date(strtotime($message_feed[$i]['created_stamp']));
+            $message_feed[$i]['username'] = $facebook_value->from->name;
+          }
+          $i++;
+          if ($i == variable_get('socialfeed_facebook_no_feeds')) {
+            break;
+          }
+        }
+      }
+      foreach ($message_feed as $feed) {
+        $feeds[] = theme('socialmedia_panes_facebook', array('facebook' => $feed));
+      }
+      return $feeds;
+    }
+  }
+  else {
+    drupal_set_message(t('Please provide your credentials at the Facebook <a href="@configuration">configuration page</a>.', array('@configuration' => 'admin/config/services/socialfeed')), 'warning');
+  }
+}
+
+/**
+ * Helper function to get comment count from facebook.
+ */
+function socialmedia_panes_fb_get_count($type, $id, $session) {
+  $request = new FacebookRequest(
+    $session,
+    'GET',
+    '/' . $id . '/' . $type,
+    array(
+      'summary' => TRUE,
+      'filter' => 'toplevel',
+    )
+  );
+  $response = $request->execute();
+  $graph_object = $response->getGraphObject();
+  $values = $graph_object->asArray('data');
+
+  return isset($values['summary']->total_count) ? $values['summary']->total_count : 0;
+}
+
+/**
+ * Helper function to get comment count from facebook.
+ */
+function socialmedia_panes_fb_get_detail($id, $session) {
+  $request = new FacebookRequest(
+    $session,
+    'GET',
+    '/' . $id
+  );
+  $response = $request->execute();
+  $graph_object = $response->getGraphObject();
+  $values = $graph_object->asArray('data');
+
+  return $values;
+}
+
+/**
+ * Uses socialfeed_twitter_posts() for fetching Twitter tweets.
+ *
+ * @var array $settings
+ */
+function socialmedia_panes_twitter_posts() {
+  $twitter_tweets = array();
+  $display_time = '';
+
+  $settings = array(
+    'oauth_access_token' => variable_get('socialfeed_twitter_access_token'),
+    'oauth_access_token_secret' => variable_get('socialfeed_twitter_access_token_secret'),
+    'consumer_key' => variable_get('socialfeed_twitter_consumer_key'),
+    'consumer_secret' => variable_get('socialfeed_twitter_consumer_secret'),
+  );
+
+  $tweets_count = variable_get('socialfeed_twitter_tweets_count');
+  $twitter_username = variable_get('socialfeed_twitter_username');
+  $url = "https://api.twitter.com/1.1/statuses/user_timeline.json";
+  $request_method = "GET";
+  $getfield = '?screen_name=' . $twitter_username . '&count=' . $tweets_count;
+  // Loading TwitterAPIExchange.
+  libraries_load('twitter');
+  $twitter = new TwitterAPIExchange($settings);
+  $twitter_values = json_decode($twitter->setGetfield($getfield)
+    ->buildOauth($url, $request_method)
+    ->performRequest(), $assoc = TRUE
+  );
+
+  if (isset($twitter_values) && !empty($twitter_values)) {
+    if (array_key_exists('errors', $twitter_values)) {
+      if ($twitter_values["errors"][0]["message"] != "") {
+        throw new Exception($twitter_values['errors'][0]["message"]);
+      }
+    }
+    $display_time = variable_get('socialfeed_twitter_time_stamp');
+    foreach ($twitter_values as $key => $twitter_value) {
+      $twitter_tweets[$key]['username'] = $twitter_value['user']['screen_name'];
+      $twitter_tweets[$key]['full_username'] = 'http://twitter.com/' . $twitter_value['user']['screen_name'];
+      $twitter_tweets[$key]['link'] = 'https://twitter.com/' . $twitter_value['user']['screen_name'] . '/status/' . $twitter_value['id_str'];
+
+      preg_match_all('#\bhttps?://[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/))#', $twitter_value['text'], $extra_links);
+      foreach ($extra_links[0] as $extra_link) {
+        $twitter_tweets[$key]['extra_links'][] = $extra_link;
+      }
+      if (isset($extra_link)) {
+        $twitter_tweets[$key]['tweet'] = rtrim($twitter_value['text'], $extra_link);
+      }
+      else {
+        $twitter_tweets[$key]['tweet'] = rtrim($twitter_value['text']);
+      }
+      if ($display_time == 1) {
+        $formatted_twitter_date = new DateTime($twitter_value['created_at']);
+        $twitter_tweets[$key]['twitter_date'] = $formatted_twitter_date->format(variable_get('socialfeed_twitter_time_format'));
+        $twitter_tweets[$key]['timeago'] = timeago_format_date(strtotime($twitter_value['created_at']));
+      }
+    }
+    $tweets = array();
+    foreach ($twitter_tweets as $tweet) {
+      $tweets[] = theme('socialmedia_panes_twitter', array('twitter' => $tweet));
+    }
+    return $tweets;
+  }
+}
