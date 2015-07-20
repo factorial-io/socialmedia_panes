@@ -9,11 +9,11 @@ $plugin = array(
   // Just do this one, it is needed.
   'single' => TRUE,
   // Title to show up on the pane screen.
-  'title' => t('Juke Newsroom facebook pane'),
+  'title' => t('Social Media Panes'),
   // Description to show up on the pane screen.
-  'description' => t('Fetches feeds from facebook page app and displays it.'),
+  'description' => t('Fetches feeds from facebook/twitter app and displays it.'),
   // A category to put this under.
-  'category' => t('Juke Newsroom'),
+  'category' => t('Social Media'),
   // A function that will return the settings form for the pane.
   'edit form' => 'socialmedia_panes_pane_edit_form',
   // A function that will return the renderable content.
