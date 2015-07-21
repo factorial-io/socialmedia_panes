@@ -70,8 +70,7 @@ function socialmedia_panes_pane_render($subtype, $conf, $args, $contexts) {
 
   ob_start();
   try {
-    // $data['facebook']['data'] = socialmedia_panes_facebook_feeds(variable_get('socialfeed_facebook_page_name'));
-    $data['facebook']['data'] = array();
+    $data['facebook']['data'] = socialmedia_panes_facebook_feeds(variable_get('socialfeed_facebook_page_name'));
   }
   catch (Exception $e) {
     ob_end_clean();
@@ -81,8 +80,7 @@ function socialmedia_panes_pane_render($subtype, $conf, $args, $contexts) {
 
   ob_start();
   try {
-    //$data['twitter']['data'] = socialmedia_panes_twitter_posts();
-    $data['twitter']['data'] = array();
+    $data['twitter']['data'] = socialmedia_panes_twitter_posts();
   }
   catch (Exception $e) {
     ob_end_clean();

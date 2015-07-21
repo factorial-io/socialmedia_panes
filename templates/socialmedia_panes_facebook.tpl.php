@@ -12,6 +12,11 @@
     <div class="heading">
       <span class="username"><?php echo $facebook['username']; ?></span>/<span class="timeago"><?php echo $facebook['timeago']; ?></span>
     </div>
+    <?php if (!empty($facebook['picture'])): ?>
+      <div class="picture">
+        <img src="<?php echo $facebook['picture']; ?>">
+      </div>
+    <?php endif ?>
     <div class="text"><?php echo $facebook['message']; ?></div>
     <div class="footer">
       <div class="feed-link">

@@ -70,8 +70,6 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
     $graph_object = $response->getGraphObject();
     $facebook_values = $graph_object->asArray('data');
     if ($facebook_values) {
-      $display_time = variable_get('socialfeed_facebook_time_stamp');
-      $display_pic = variable_get('socialfeed_facebook_display_pic');
       $display_all_posts = variable_get('socialfeed_facebook_all_types');
 
       $selected_type = variable_get('socialfeed_facebook_post_type');
@@ -83,15 +81,12 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         if ($facebook_value->type == $selected_type_value) {
           if (array_key_exists('message', $facebook_value)) {
             if ($facebook_value->type == 'photo') {
-              if ($display_pic == 1) {
-                $message_feed[$i]['picture'] = $facebook_value->picture;
-              }
+              $message_feed[$i]['picture'] = $facebook_value->picture;
             }
             $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
-            if ($display_time == 1) {
-              $formatted_date = new DateTime($facebook_value->created_time);
-              $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
-            }
+            $formatted_date = new DateTime($facebook_value->created_time);
+            $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
+
           }
           $i++;
           if ($i == variable_get('socialfeed_facebook_no_feeds')) {
@@ -100,15 +95,13 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         }
         elseif ($display_all_posts == 1) {
           if (array_key_exists('message', $facebook_value)) {
-            if ($display_pic == 1) {
+            if ($facebook_value->type == 'photo') {
               $message_feed[$i]['picture'] = $facebook_value->picture;
             }
             $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
             $message_feed[$i]['type'] = $facebook_value->type;
-            if ($display_time == 1) {
-              $formatted_date = new DateTime($facebook_value->created_time);
-              $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
-            }
+            $formatted_date = new DateTime($facebook_value->created_time);
+            $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
           }
           if (isset($message_feed[$i])) {
             $id = $facebook_value->id;
