@@ -6,7 +6,7 @@
  */
 ?>
 
-<div class="socialmedai-panes-facebook-wrapper">
+<div class="socialmedia-panes-facebook-wrapper">
   <div class="icon icon-facebook">f</div>
   <div class="feed-body">
     <div class="heading">
