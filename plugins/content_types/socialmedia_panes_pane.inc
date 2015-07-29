@@ -23,7 +23,8 @@ $plugin = array(
   'admin info' => 'socialmedia_panes_pane_admin_info',
   // Array of defaults for the settings form.
   'defaults' => array(
-    'text' => '',
+    'show_facebook' => TRUE,
+    'show_twitter' => TRUE,
   ),
   // This is NEEDED to be able to use substitution strings in your pane.
   'all contexts' => TRUE,
@@ -34,12 +35,16 @@ $plugin = array(
  */
 function socialmedia_panes_pane_edit_form($form, &$form_state) {
   $conf = $form_state['conf'];
+  $form['show_facebook'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show facebook feeds'),
+    '#default_value' => $conf['show_facebook'],
+  );
 
-  $form['text'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Panel Text'),
-    '#description' => t('Text to display, it may use substitution strings'),
-    '#default_value' => $conf['text'],
+  $form['show_twitter'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show twitter feeds'),
+    '#default_value' => $conf['show_twitter'],
   );
 
   return $form;
@@ -49,6 +54,7 @@ function socialmedia_panes_pane_edit_form($form, &$form_state) {
  * Submit function, anything in the formstate[conf] automatically gets saved.
  */
 function socialmedia_panes_pane_edit_form_submit(&$form, &$form_state) {
+  dpm($form_state);
   foreach (array_keys($form_state['plugin']['defaults']) as $key) {
     if (isset($form_state['values'][$key])) {
       $form_state['conf'][$key] = $form_state['values'][$key];
@@ -70,7 +76,12 @@ function socialmedia_panes_pane_render($subtype, $conf, $args, $contexts) {
 
   ob_start();
   try {
-    $data['facebook']['data'] = socialmedia_panes_facebook_feeds(variable_get('socialfeed_facebook_page_name'));
+    if ($conf['show_facebook']) {
+      $data['facebook']['data'] = socialmedia_panes_facebook_feeds(variable_get('socialfeed_facebook_page_name'));
+    }
+    else {
+      unset($data['facebook']['data']);
+    }
   }
   catch (Exception $e) {
     ob_end_clean();
@@ -80,7 +91,12 @@ function socialmedia_panes_pane_render($subtype, $conf, $args, $contexts) {
 
   ob_start();
   try {
-    $data['twitter']['data'] = socialmedia_panes_twitter_posts();
+    if ($conf['show_twitter']) {
+      $data['twitter']['data'] = socialmedia_panes_twitter_posts();
+    }
+    else {
+      unset($data['twitter']);
+    }
   }
   catch (Exception $e) {
     ob_end_clean();
