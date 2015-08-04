@@ -80,9 +80,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
       foreach ($facebook_values['data'] as $facebook_value) {
         if ($facebook_value->type == $selected_type_value) {
           if (array_key_exists('message', $facebook_value)) {
-            if ($facebook_value->type == 'photo') {
-              $message_feed[$i]['picture'] = $facebook_value->picture;
-            }
+            $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
             $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
@@ -95,9 +93,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         }
         elseif ($display_all_posts == 1) {
           if (array_key_exists('message', $facebook_value)) {
-            if ($facebook_value->type == 'photo') {
-              $message_feed[$i]['picture'] = $facebook_value->picture;
-            }
+            $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
             $message_feed[$i]['message'] = substr($facebook_value->message, 0, variable_get('socialfeed_facebook_trim_length'));
             $message_feed[$i]['type'] = $facebook_value->type;
             $formatted_date = new DateTime($facebook_value->created_time);
@@ -134,6 +130,29 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
   else {
     drupal_set_message(t('Please provide your credentials at the Facebook <a href="@configuration">configuration page</a>.', array('@configuration' => 'admin/config/services/socialfeed')), 'warning');
   }
+}
+
+/**
+ * Helper function to get picture from facebook post.
+ */
+function socialmedia_panes_fb_get_picture($fb_value, $session) {
+  if ($facebook_value->type == 'photo') {
+    return ($facebook_value->picture);
+  }
+
+  $request = new FacebookRequest(
+    $session,
+    'GET',
+    '/' . $fb_value->id,
+    array(
+      'fields' => 'id,name,picture',
+    )
+  );
+
+  $response = $request->execute();
+  $graph_object = $response->getGraphObject();
+  $values = $graph_object->asArray('data');
+  return isset($values['picture']) ? $values['picture'] : NULL;
 }
 
 /**
