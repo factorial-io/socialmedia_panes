@@ -259,7 +259,7 @@ function socialmedia_panes_twitter_posts() {
 /**
  * Helper function to truncate text with custom suffix if truncated.
  */
-function socialmedia_panes_truncate_utf8($string, $max_length, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1, $ellipsis_string, = '...') {
+function socialmedia_panes_truncate_utf8($string, $max_length, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1, $ellipsis_string = '...') {
   $ellipsis = '';
   $max_length = max($max_length, 0);
   $min_wordsafe_length = max($min_wordsafe_length, 0);
