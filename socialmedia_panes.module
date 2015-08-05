@@ -81,7 +81,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         if ($facebook_value->type == $selected_type_value) {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
-            $message_feed[$i]['message'] = truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE);
+            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, '(...)');
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
 
@@ -94,7 +94,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         elseif ($display_all_posts == 1) {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
-            $message_feed[$i]['message'] = truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE);
+            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, '(...)');
             $message_feed[$i]['type'] = $facebook_value->type;
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
@@ -254,4 +254,53 @@ function socialmedia_panes_twitter_posts() {
     }
     return $tweets;
   }
+}
+
+/**
+ * Helper function to truncate text with custom suffix if truncated.
+ */
+function socialmedia_panes_truncate_utf8($string, $max_length, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1, $ellipsis_string, = '...') {
+  $ellipsis = '';
+  $max_length = max($max_length, 0);
+  $min_wordsafe_length = max($min_wordsafe_length, 0);
+
+  if (drupal_strlen($string) <= $max_length) {
+    // No truncation needed, so don't add ellipsis, just return.
+    return $string;
+  }
+
+  if ($add_ellipsis) {
+    // Truncate ellipsis in case $max_length is small.
+    $ellipsis = drupal_substr($ellipsis_string, 0, $max_length);
+    $max_length -= drupal_strlen($ellipsis);
+    $max_length = max($max_length, 0);
+  }
+
+  if ($max_length <= $min_wordsafe_length) {
+    // Do not attempt word-safe if lengths are bad.
+    $wordsafe = FALSE;
+  }
+
+  if ($wordsafe) {
+    $matches = array();
+    // Find the last word boundary, if there is one within $min_wordsafe_length
+    // to $max_length characters. preg_match() is always greedy, so it will
+    // find the longest string possible.
+    $found = preg_match('/^(.{' . $min_wordsafe_length . ',' . $max_length . '})[' . PREG_CLASS_UNICODE_WORD_BOUNDARY . ']/u', $string, $matches);
+    if ($found) {
+      $string = $matches[1];
+    }
+    else {
+      $string = drupal_substr($string, 0, $max_length);
+    }
+  }
+  else {
+    $string = drupal_substr($string, 0, $max_length);
+  }
+
+  if ($add_ellipsis) {
+    $string .= $ellipsis;
+  }
+
+  return $string;
 }
