@@ -81,7 +81,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         if ($facebook_value->type == $selected_type_value) {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
-            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, '(...)');
+            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, ' (...)');
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
 
@@ -94,7 +94,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
         elseif ($display_all_posts == 1) {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
-            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, '(...)');
+            $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, ' (...)');
             $message_feed[$i]['type'] = $facebook_value->type;
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
