@@ -78,7 +78,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
       $selected_type_value = $fb_type[$selected_type_key];
       $i = 0;
       foreach ($facebook_values['data'] as $facebook_value) {
-        if ($facebook_value->type == $selected_type_value) {
+        if (isset($facebook_value->type) && $facebook_value->type == $selected_type_value) {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
             $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, ' (...)');
@@ -95,7 +95,7 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
           if (array_key_exists('message', $facebook_value)) {
             $message_feed[$i]['picture'] = socialmedia_panes_fb_get_picture($facebook_value, $session);
             $message_feed[$i]['message'] = socialmedia_panes_truncate_utf8($facebook_value->message, variable_get('socialfeed_facebook_trim_length'), TRUE, TRUE, 1, ' (...)');
-            $message_feed[$i]['type'] = $facebook_value->type;
+            $message_feed[$i]['type'] = isset($facebook_value->type) ? $facebook_value->type : NULL;
             $formatted_date = new DateTime($facebook_value->created_time);
             $message_feed[$i]['created_stamp'] = $formatted_date->format(variable_get('socialfeed_facebook_time_format'));
           }
@@ -109,11 +109,11 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
               $message_feed[$i]['link'] = '#';
             }
             $detail = socialmedia_panes_fb_get_detail($id, $session);
-            $message_feed[$i]['category'] = $detail['from']->category;
+            $message_feed[$i]['category'] = isset($detail['from']->category) ? $detail['from']->category : FALSE;
             $message_feed[$i]['comments'] = socialmedia_panes_fb_get_count('comments', $id, $session);
             $message_feed[$i]['likes'] = socialmedia_panes_fb_get_count('likes', $id, $session);
             $message_feed[$i]['timeago'] = timeago_format_date(strtotime($message_feed[$i]['created_stamp']));
-            $message_feed[$i]['username'] = $facebook_value->from->name;
+            $message_feed[$i]['username'] = isset($facebook_value->from->name) ? $facebook_value->from->name : FALSE;
           }
           $i++;
           if ($i == variable_get('socialfeed_facebook_no_feeds')) {
@@ -136,8 +136,8 @@ function socialmedia_panes_facebook_feeds($page_name = '') {
  * Helper function to get picture from facebook post.
  */
 function socialmedia_panes_fb_get_picture($fb_value, $session) {
-  if ($facebook_value->type == 'photo') {
-    return ($facebook_value->picture);
+  if (isset($fb_value->type) && $fb_value->type == 'photo') {
+    return ($fb_value->picture);
   }
 
   $request = new FacebookRequest(

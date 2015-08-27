@@ -35,6 +35,7 @@ $plugin = array(
  */
 function socialmedia_panes_pane_edit_form($form, &$form_state) {
   $conf = $form_state['conf'];
+
   $form['show_facebook'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show facebook feeds'),
